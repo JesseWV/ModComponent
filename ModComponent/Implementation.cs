@@ -80,56 +80,52 @@ internal class Implementation : MelonMod
 		internal static void Prefix(GearItem __instance, float blendVal, ref bool __runOriginal)
 		{
 			ModBaseComponent modComponent = ModComponent.Utils.ComponentUtils.GetModComponent(__instance);
-			if (modComponent != null && !CanShowDamage(__instance))
+			if (modComponent != null && !HasUsableDamageTexture(__instance))
 			{
 				__runOriginal = false;
 			}
 		}
 
-		private static bool CanShowDamage(GearItem gearItem)
+		private static bool HasUsableDamageTexture(GearItem gearItem)
 		{
 			if (gearItem.m_MeshRenderers == null || gearItem.m_SkinnedMeshRenderers == null)
 			{
 				return false;
 			}
 
-			bool hasDamageTexture = false;
-			foreach (MeshRenderer renderer in gearItem.m_MeshRenderers)
+			bool foundDamageTexture = false;
+			foreach (Renderer renderer in GetRenderers(gearItem))
 			{
-				if (!CheckMaterials(renderer, ref hasDamageTexture))
-				{
-					return false;
-				}
-			}
-			foreach (SkinnedMeshRenderer renderer in gearItem.m_SkinnedMeshRenderers)
-			{
-				if (!CheckMaterials(renderer, ref hasDamageTexture))
-				{
-					return false;
-				}
-			}
-			return hasDamageTexture;
-		}
-
-		private static bool CheckMaterials(Renderer renderer, ref bool hasDamageTexture)
-		{
-			if (renderer == null)
-			{
-				return true;
-			}
-			foreach (Material material in renderer.sharedMaterials)
-			{
-				if (material == null || !material.HasProperty(DamageTextureID))
+				if (renderer == null)
 				{
 					continue;
 				}
-				if (material.GetTexture(DamageTextureID) == null)
+				foreach (Material material in renderer.sharedMaterials)
 				{
-					return false;
+					if (material == null || !material.HasProperty(DamageTextureID))
+					{
+						continue;
+					}
+					if (material.GetTexture(DamageTextureID) == null)
+					{
+						return false;
+					}
+					foundDamageTexture = true;
 				}
-				hasDamageTexture = true;
 			}
-			return true;
+			return foundDamageTexture;
+		}
+
+		private static IEnumerable<Renderer> GetRenderers(GearItem gearItem)
+		{
+			foreach (MeshRenderer renderer in gearItem.m_MeshRenderers)
+			{
+				yield return renderer;
+			}
+			foreach (SkinnedMeshRenderer renderer in gearItem.m_SkinnedMeshRenderers)
+			{
+				yield return renderer;
+			}
 		}
 	}
 
